@@ -51,16 +51,15 @@ A competent manager should clear **€10–15k net profit** by restocking, staff
 
 ## Agent performance (30-day runs)
 
-| metric | Sonnet 4.6 | Haiku 4.5 |
-|---|---|---|
-| net profit | **€190,895** | €106,865 |
-| total revenue | €382,502 | €258,083 |
-| gross margin | 71.7% | 71.1% |
-| cash delta | +€87,907 | +€48,020 |
-| mean satisfaction | 0.768 | — |
-| mean reputation | 4.245 | — |
-| walkouts | 1,017 | — |
-| incidents | 1 | — |
-| total tokens | 113,433 | 76,982 |
-| tool uses | 50 | 54 |
-| duration | 5m 28s | 2m 57s |
+| metric | Haiku 4.5 |
+|---|---|
+| net profit | €116,267 |
+| total revenue | €276,883 |
+| gross margin | 69.7% |
+| cash delta | +€15,523 |
+| mean satisfaction | 0.687 |
+| mean reputation | 4.094 |
+| walkouts | 1,490 |
+| total tokens | 27,610 |
+| tool uses | 38 |
+| duration | 2m 13s |

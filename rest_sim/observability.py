@@ -112,9 +112,9 @@ def status_snapshot(state: dict) -> dict:
     h = state["daily_kpis_history"]
     last = h[-1] if h else None
     next_date = None
-    from game_state import current_date, is_done
-    if not is_done(state):
-        next_date = current_date(state)
+    from . import game_state
+    if not game_state.is_done(state):
+        next_date = game_state.current_date(state)
     alerts = []
     # Inventory alerts
     low = sorted(

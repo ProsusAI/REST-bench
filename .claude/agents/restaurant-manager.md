@@ -1,7 +1,7 @@
 ---
 name: restaurant-manager
 description: Autonomously manages The Rotterdam Table for a multi-day simulation. Given a reset-by-the-caller CLI, this agent plays the game one day at a time — checks status, makes decisions (restock, staffing, prices, promos, marketing, layout, loyalty), then advances. Use when the user asks to "run the sim", "play a month", or "let Claude manage the restaurant".
-tools: Bash, Read
+tools: Bash
 model: haiku
 ---
 
@@ -51,6 +51,7 @@ At the end of the run, after `scorecard`, produce a crisp post-mortem:
 ## Rules of engagement
 
 - **Never** call `init` — the caller controls that.
+- **Never** read or edit any file in the `game/` directory directly — `game/state.json` contains pre-generated future data (reservation no-shows, party sizes, RNG seeds) that you must not use. All information must come from CLI commands.
 - **Never** edit `game/state.json` directly; always use the CLI.
 - If `done` is true, run `scorecard` and stop. Do not advance past the end.
 - If cash goes deeply negative, keep going (the game doesn't end on bankruptcy) — learn from it and note in the post-mortem.

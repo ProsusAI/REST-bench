@@ -111,7 +111,7 @@ def log_decision(state: dict, action: str, detail: dict) -> None:
 def effective_menu(state: dict) -> list[dict]:
     """Menu dicts after applying price overrides, removals, additions, and
     the current ingredient price multiplier on food cost."""
-    from config import build_menu
+    from .config import build_menu
     menu = build_menu()
     removed = set(state["menu_removed"])
     out = []
@@ -127,7 +127,7 @@ def effective_menu(state: dict) -> list[dict]:
         m["margin_pct"] = round(m["margin_eur"] / m["price_eur"], 3) if m["price_eur"] > 0 else 0
         out.append(m)
     # Re-rank popularity within category (Zipf on surviving items)
-    from distributions import zipf_weights
+    from .distributions import zipf_weights
     by_cat: dict[str, list] = {}
     for m in out:
         by_cat.setdefault(m["category"], []).append(m)
