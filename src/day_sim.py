@@ -14,14 +14,14 @@ from typing import Any
 
 import numpy as np
 
-import distributions as dists
-from config import RESTAURANT, TABLES
-from economy import (
+from . import distributions as dists
+from .config import RESTAURANT, TABLES
+from .economy import (
     staffing_pressure, payroll_for_date, fixed_costs_for_date,
     apply_spoilage, apply_ingredient_shock, marketing_lift,
     reputation_multiplier, update_reputation, sample_weather, roll_incident,
 )
-from game_state import (
+from .game_state import (
     current_date, date_for, active_promo_discount, effective_menu,
     log_decision,
 )

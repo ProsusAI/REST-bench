@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Literal
 
-from distributions import zipf_weights
+from .distributions import zipf_weights
 
 
 # ---------------------------------------------------------------------------

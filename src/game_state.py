@@ -10,10 +10,10 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from typing import Any
 
-from config import MENU_ITEMS, STAFF, TABLES
+from .config import MENU_ITEMS, STAFF, TABLES
 
 
-GAME_DIR = os.path.join(os.path.dirname(__file__), "game")
+GAME_DIR = os.path.join(os.path.dirname(__file__), "..", "game")
 STATE_PATH = os.path.join(GAME_DIR, "state.json")
 
 

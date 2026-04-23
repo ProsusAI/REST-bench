@@ -6,8 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from config import STAFF, MENU_ITEMS
-from game_state import (
+from .config import STAFF, MENU_ITEMS
+from .game_state import (
     RENT_PER_MONTH, UTILITIES_PER_DAY, INSURANCE_PER_DAY,
     POS_SUBSCRIPTION_PER_DAY, LOYALTY_COST_PER_DAY,
     PERISHABLE_CATEGORIES, PERISHABLE_SPOILAGE_RATE,

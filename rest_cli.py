@@ -18,9 +18,9 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-import game_state as gs
-import observability as obs
-from day_sim import run_one_day, pregenerate_reservations
+from src import game_state as gs
+from src import observability as obs
+from src.day_sim import run_one_day, pregenerate_reservations
 
 
 def _print(data, as_json: bool = True):
