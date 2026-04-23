@@ -1,0 +1,146 @@
+[
+  {
+    "id": "T01",
+    "seats": 2,
+    "location": "window",
+    "combinable_with": []
+  },
+  {
+    "id": "T02",
+    "seats": 2,
+    "location": "window",
+    "combinable_with": []
+  },
+  {
+    "id": "T03",
+    "seats": 2,
+    "location": "window",
+    "combinable_with": []
+  },
+  {
+    "id": "T04",
+    "seats": 2,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T05",
+    "seats": 2,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T06",
+    "seats": 2,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T07",
+    "seats": 2,
+    "location": "booth",
+    "combinable_with": []
+  },
+  {
+    "id": "T08",
+    "seats": 2,
+    "location": "booth",
+    "combinable_with": []
+  },
+  {
+    "id": "T09",
+    "seats": 4,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T10",
+    "seats": 4,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T11",
+    "seats": 4,
+    "location": "window",
+    "combinable_with": []
+  },
+  {
+    "id": "T12",
+    "seats": 4,
+    "location": "booth",
+    "combinable_with": []
+  },
+  {
+    "id": "T13",
+    "seats": 4,
+    "location": "booth",
+    "combinable_with": []
+  },
+  {
+    "id": "T14",
+    "seats": 4,
+    "location": "patio",
+    "combinable_with": []
+  },
+  {
+    "id": "T15",
+    "seats": 4,
+    "location": "patio",
+    "combinable_with": []
+  },
+  {
+    "id": "T16",
+    "seats": 6,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "T17",
+    "seats": 6,
+    "location": "booth",
+    "combinable_with": []
+  },
+  {
+    "id": "T18",
+    "seats": 8,
+    "location": "center",
+    "combinable_with": []
+  },
+  {
+    "id": "B01",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  },
+  {
+    "id": "B02",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  },
+  {
+    "id": "B03",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  },
+  {
+    "id": "B04",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  },
+  {
+    "id": "B05",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  },
+  {
+    "id": "B06",
+    "seats": 1,
+    "location": "bar",
+    "combinable_with": []
+  }
+]

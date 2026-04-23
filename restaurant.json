@@ -1,0 +1,43 @@
+{
+  "id": "rest_001",
+  "name": "The Rotterdam Table",
+  "concept": "casual full-service bistro",
+  "cuisine": "modern European",
+  "address": "Witte de Withstraat 42, 3012 BR Rotterdam, NL",
+  "tax_rate": 0.09,
+  "drink_tax_rate": 0.21,
+  "service_charge_rate": 0.0,
+  "auto_gratuity_party_threshold": 6,
+  "auto_gratuity_rate": 0.18,
+  "open_hours": {
+    "0": [
+      11.0,
+      23.0
+    ],
+    "1": [
+      11.0,
+      23.0
+    ],
+    "2": [
+      11.0,
+      23.0
+    ],
+    "3": [
+      11.0,
+      23.0
+    ],
+    "4": [
+      11.0,
+      24.0
+    ],
+    "5": [
+      11.0,
+      24.0
+    ],
+    "6": [
+      11.0,
+      22.0
+    ]
+  },
+  "currency": "EUR"
+}

@@ -1,0 +1,183 @@
+"""Report generators for the management game."""
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+
+
+def pnl_summary(state: dict, last_n_days: int | None = None) -> dict:
+    rows = state["pnl_history"]
+    if last_n_days is not None:
+        rows = rows[-last_n_days:]
+    if not rows:
+        return {"empty": True}
+    agg = {k: 0.0 for k in [
+        "revenue_eur", "cogs_eur", "gross_margin_eur", "payroll_eur",
+        "rent_eur", "utilities_eur", "insurance_eur", "pos_eur",
+        "loyalty_eur", "marketing_eur", "incident_eur", "discounts_eur",
+        "net_profit_eur",
+    ]}
+    for r in rows:
+        for k in agg:
+            agg[k] += r[k]
+    agg = {k: round(v, 2) for k, v in agg.items()}
+    agg["days"] = len(rows)
+    agg["cash_start"] = rows[0]["cash_end_eur"] - rows[0]["net_profit_eur"]
+    agg["cash_end"] = rows[-1]["cash_end_eur"]
+    return agg
+
+
+def attribution(state: dict) -> dict:
+    """Compare the last 7 days vs the prior 7 days: what drove the delta?"""
+    h = state["daily_kpis_history"]
+    if len(h) < 8:
+        return {"note": f"need at least 8 days of history (have {len(h)})"}
+    last = h[-7:]
+    prior = h[-14:-7] if len(h) >= 14 else h[:-7]
+
+    def mean(rows, key):
+        return float(np.mean([r[key] for r in rows])) if rows else 0.0
+
+    def tot(rows, key):
+        return float(np.sum([r[key] for r in rows])) if rows else 0.0
+
+    delta_rev = tot(last, "revenue_eur") - tot(prior, "revenue_eur")
+    delta_visits = tot(last, "visits") - tot(prior, "visits")
+    delta_check = mean(last, "avg_check_eur") - mean(prior, "avg_check_eur")
+    delta_walkouts = tot(last, "walkouts") - tot(prior, "walkouts")
+    delta_sat = mean(last, "mean_satisfaction") - mean(prior, "mean_satisfaction")
+    delta_rep = mean(last, "reputation") - mean(prior, "reputation")
+    delta_demand = mean(last, "demand_multiplier") - mean(prior, "demand_multiplier")
+
+    return {
+        "window_last": f"{last[0]['date']} \u2192 {last[-1]['date']}",
+        "window_prior": f"{prior[0]['date']} \u2192 {prior[-1]['date']}",
+        "revenue_delta_eur": round(delta_rev, 2),
+        "visits_delta": int(delta_visits),
+        "avg_check_delta_eur": round(delta_check, 2),
+        "walkouts_delta": int(delta_walkouts),
+        "satisfaction_delta": round(delta_sat, 3),
+        "reputation_delta": round(delta_rep, 3),
+        "demand_multiplier_delta": round(delta_demand, 3),
+    }
+
+
+def heatmap(state: dict, last_n_days: int | None = None) -> dict:
+    """Arrivals heatmap by day_of_week × hour from daily KPI hour_heat."""
+    rows = state["daily_kpis_history"]
+    if last_n_days:
+        rows = rows[-last_n_days:]
+    # dow (0-6) × hour (11-22) → count
+    grid = {dow: {h: 0 for h in range(11, 23)} for dow in range(7)}
+    for r in rows:
+        dow = r["day_of_week"]
+        for h_str, c in r["hour_heat"].items():
+            h = int(h_str)
+            if h in grid[dow]:
+                grid[dow][h] += c
+    # Render a small ASCII table
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    lines = ["hour " + " ".join(f"{d:>4}" for d in day_names)]
+    for h in range(11, 23):
+        row = [f"{h:>2}  "]
+        for dow in range(7):
+            row.append(f"{grid[dow][h]:>4}")
+        lines.append(" ".join(row))
+    return {"grid": grid, "ascii": "\n".join(lines)}
+
+
+def cohort_breakdown(state: dict, last_n_days: int = 7) -> dict:
+    """Reservation vs walk-in margin & volume from per-day KPIs.
+    (Simple approximation — computed from visit counts; finer attribution
+    would need to persist order-level cohorts.)"""
+    # We store only aggregates by day in state, so return a stylized breakdown
+    # using the reservations_all table.
+    h = state["daily_kpis_history"][-last_n_days:]
+    if not h:
+        return {"empty": True}
+    total_visits = sum(r["visits"] for r in h)
+    total_res = sum(r["reservations_today"] for r in h)
+    walk = total_visits - total_res
+    return {
+        "window_days": len(h),
+        "reservation_visits_est": total_res,
+        "walk_in_visits_est": max(0, walk),
+        "reservation_share": round(total_res / total_visits, 3) if total_visits else 0.0,
+    }
+
+
+def status_snapshot(state: dict) -> dict:
+    """Terse current state for the agent to read each turn."""
+    h = state["daily_kpis_history"]
+    last = h[-1] if h else None
+    next_date = None
+    from game_state import current_date, is_done
+    if not is_done(state):
+        next_date = current_date(state)
+    alerts = []
+    # Inventory alerts
+    low = sorted(
+        [(k, v) for k, v in state["inventory"].items() if v < 10],
+        key=lambda x: x[1]
+    )[:10]
+    if low:
+        alerts.append(f"low stock: " + ", ".join(f"{k}={v}" for k, v in low))
+    if state["cash_eur"] < 2000:
+        alerts.append(f"CASH LOW: €{state['cash_eur']:.0f}")
+    if state["reputation"] < 3.8:
+        alerts.append(f"reputation declining: {state['reputation']:.2f}")
+    if state["ingredient_price_multiplier"] > 1.2:
+        alerts.append(
+            f"ingredient prices up {(state['ingredient_price_multiplier']-1)*100:.0f}%"
+        )
+    return {
+        "day_index": state["day_index"],
+        "total_days": state["total_days"],
+        "next_date": next_date,
+        "cash_eur": state["cash_eur"],
+        "reputation": state["reputation"],
+        "satisfaction_ewma": round(state["satisfaction_ewma"], 3),
+        "ingredient_price_multiplier": round(state["ingredient_price_multiplier"], 3),
+        "loyalty_enabled": state["loyalty_enabled"],
+        "competitor_active": state["competitor_active"],
+        "active_promos": state["active_promos"],
+        "upcoming_staffing_overrides": {
+            d: v for d, v in state["staffing_override"].items()
+            if d >= (next_date or "")
+        },
+        "upcoming_reservation_caps": {
+            d: v for d, v in state["reservation_caps"].items()
+            if d >= (next_date or "")
+        },
+        "last_day_kpi": last,
+        "alerts": alerts,
+    }
+
+
+def scorecard(state: dict) -> dict:
+    """Final outcome summary for the end of the month."""
+    total_rev = sum(r["revenue_eur"] for r in state["pnl_history"])
+    total_profit = sum(r["net_profit_eur"] for r in state["pnl_history"])
+    total_cogs = sum(r["cogs_eur"] for r in state["pnl_history"])
+    days = len(state["daily_kpis_history"])
+    mean_sat = float(np.mean([r["mean_satisfaction"]
+                              for r in state["daily_kpis_history"]])) if days else 0
+    mean_rep = float(np.mean([r["reputation"]
+                              for r in state["daily_kpis_history"]])) if days else 0
+    total_walkouts = sum(r["walkouts"] for r in state["daily_kpis_history"])
+    return {
+        "days_simulated": days,
+        "starting_cash_eur": state["starting_cash_eur"],
+        "ending_cash_eur": state["cash_eur"],
+        "cash_delta_eur": round(state["cash_eur"] - state["starting_cash_eur"], 2),
+        "total_revenue_eur": round(total_rev, 2),
+        "total_cogs_eur": round(total_cogs, 2),
+        "total_net_profit_eur": round(total_profit, 2),
+        "gross_margin_pct": round(1 - total_cogs / total_rev, 3) if total_rev else 0,
+        "mean_satisfaction": round(mean_sat, 3),
+        "mean_reputation": round(mean_rep, 3),
+        "total_walkouts": int(total_walkouts),
+        "incidents": len(state["incidents_log"]),
+        "decisions": len(state["decisions_log"]),
+    }

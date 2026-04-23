@@ -1,0 +1,666 @@
+[
+  {
+    "id": "E001",
+    "name": "Marieke de Vries",
+    "role": "manager",
+    "hourly_wage_eur": 32.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E002",
+    "name": "Thomas Bakker",
+    "role": "chef",
+    "hourly_wage_eur": 28.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E003",
+    "name": "Lisa Jansen",
+    "role": "sous_chef",
+    "hourly_wage_eur": 22.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 10.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E004",
+    "name": "Ahmed Hassan",
+    "role": "sous_chef",
+    "hourly_wage_eur": 22.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 4,
+        "start_hour": 14.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 14.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 14.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E005",
+    "name": "Peter Smit",
+    "role": "line_cook",
+    "hourly_wage_eur": 16.5,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 10.0,
+        "end_hour": 16.0
+      }
+    ]
+  },
+  {
+    "id": "E006",
+    "name": "Sophie van Dijk",
+    "role": "line_cook",
+    "hourly_wage_eur": 16.5,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E007",
+    "name": "Karim El-Amin",
+    "role": "line_cook",
+    "hourly_wage_eur": 16.5,
+    "shift_pattern": [
+      {
+        "day_of_week": 4,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E008",
+    "name": "Martin Jong",
+    "role": "dishwasher",
+    "hourly_wage_eur": 13.5,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 11.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E009",
+    "name": "Emma Visser",
+    "role": "host",
+    "hourly_wage_eur": 15.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 11.0,
+        "end_hour": 16.0
+      }
+    ]
+  },
+  {
+    "id": "E010",
+    "name": "Jeroen Bos",
+    "role": "host",
+    "hourly_wage_eur": 15.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E011",
+    "name": "Nora Mulder",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      }
+    ]
+  },
+  {
+    "id": "E012",
+    "name": "Lars Hendriks",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 11.0,
+        "end_hour": 17.0
+      }
+    ]
+  },
+  {
+    "id": "E013",
+    "name": "Fatima Yildiz",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E014",
+    "name": "Daan Meijer",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 16.0,
+        "end_hour": 23.0
+      }
+    ]
+  },
+  {
+    "id": "E015",
+    "name": "Iris Kuipers",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 3,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E016",
+    "name": "Rens Post",
+    "role": "server",
+    "hourly_wage_eur": 14.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 4,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 17.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E017",
+    "name": "Chlo\u00e9 Martin",
+    "role": "bartender",
+    "hourly_wage_eur": 16.0,
+    "shift_pattern": [
+      {
+        "day_of_week": 0,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 1,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 2,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 3,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 16.0,
+        "end_hour": 23.5
+      }
+    ]
+  },
+  {
+    "id": "E018",
+    "name": "Sanne de Boer",
+    "role": "busser",
+    "hourly_wage_eur": 12.5,
+    "shift_pattern": [
+      {
+        "day_of_week": 3,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 4,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 5,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      },
+      {
+        "day_of_week": 6,
+        "start_hour": 17.0,
+        "end_hour": 23.0
+      }
+    ]
+  }
+]
