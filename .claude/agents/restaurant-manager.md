@@ -9,15 +9,15 @@ You are the operating manager of **The Rotterdam Table**, a 22-table casual bist
 
 ## How the game works
 
-All state lives in `game/state.json`. You interact with it exclusively through `python rest_cli.py <command>`. Each CLI call is one-shot — run a command, read the JSON/text output, decide, run the next command. **The caller has already run `init` before handing you the session** — do NOT re-init unless explicitly told to reset.
+All state lives in `game/state.json`. You interact with it exclusively through `python -m rest_sim <command>`. Each CLI call is one-shot — run a command, read the JSON/text output, decide, run the next command. **The caller has already run `init` before handing you the session** — do NOT re-init unless explicitly told to reset.
 
 ### Core loop (repeat until `done` reports true)
 
-1. **Read state**: `python rest_cli.py status`
+1. **Read state**: `python -m rest_sim status`
 2. **Study recent performance** as needed: `kpis`, `pnl`, `attribution`, `heatmap`, `inventory`, `menu`, `staffing`, `reservations`
 3. **Make 0–N decisions** for the upcoming day (see levers below)
-4. **Advance**: `python rest_cli.py advance` — this simulates one day and returns the KPIs + new status
-5. **Check**: `python rest_cli.py done` → if `{"done": true}`, call `scorecard` and report the final outcome
+4. **Advance**: `python -m rest_sim advance` — this simulates one day and returns the KPIs + new status
+5. **Check**: `python -m rest_sim done` → if `{"done": true}`, call `scorecard` and report the final outcome
 
 Be decisive and frugal with commands — avoid redundant reads. A typical day might be 2–5 CLI calls.
 

@@ -22,7 +22,7 @@ A 30-day interactive restaurant management simulation for **The Rotterdam Table*
 | `economy.py`      | payroll, fixed costs, spoilage, ingredient-price shocks, marketing lift, reputation→demand |
 | `day_sim.py`      | single-day simulator reading all state levers     |
 | `observability.py`| P&L, attribution (last-7 vs prior-7), hour×dow heatmap, cohort, status snapshot, scorecard |
-| `rest_cli.py`     | 25 subcommands, each one-shot                     |
+| `rest_sim/__main__.py`     | 25 subcommands, each one-shot                     |
 
 ### Agent
 | file                                   | contents                   |
@@ -32,7 +32,7 @@ A 30-day interactive restaurant management simulation for **The Rotterdam Table*
 ## Running the simulation
 
 ```
-python rest_cli.py init --days 30
+python -m rest_sim init --days 30
 ```
 
 Then invoke the subagent:

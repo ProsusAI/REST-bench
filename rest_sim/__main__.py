@@ -6,8 +6,8 @@ compact JSON/text response, and exits. Intended to be driven by an
 agent loop.
 
 Usage:
-    python rest_cli.py <command> [args...]
-Run `python rest_cli.py help` for a list of commands.
+    python -m rest_sim <command> [args...]
+Run `python -m rest_sim help` for a list of commands.
 """
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-from src import game_state as gs
-from src import observability as obs
-from src.day_sim import run_one_day, pregenerate_reservations
+from . import game_state as gs
+from . import observability as obs
+from .day_sim import run_one_day, pregenerate_reservations
 
 
 def _print(data, as_json: bool = True):
@@ -134,7 +134,7 @@ def cmd_inventory(args):
 
 def cmd_restock(args):
     state = gs.load()
-    from economy import restock_cost
+    from .economy import restock_cost
     cost = restock_cost(state, args.item_id, args.qty)
     if cost > state["cash_eur"]:
         _print({"ok": False, "error": "insufficient cash",
@@ -151,7 +151,7 @@ def cmd_restock(args):
 
 def cmd_staffing(args):
     state = gs.load()
-    from economy import scheduled_staff_for_date, payroll_for_date
+    from .economy import scheduled_staff_for_date, payroll_for_date
     date = args.date or gs.current_date(state)
     _print({
         "date": date,
@@ -351,7 +351,7 @@ def cmd_help(args):
 
 
 def build_parser():
-    p = argparse.ArgumentParser(prog="rest_cli")
+    p = argparse.ArgumentParser(prog="rest_sim")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init");      s.set_defaults(fn=cmd_init)
