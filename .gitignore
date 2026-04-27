@@ -24,4 +24,11 @@ env/
 
 # Generated simulation output
 *.csv
+run.log
+scorecard.json
 game/state.json
+game/reservations.json
+game/decisions_log.jsonl
+game/dashboard.pid
+game/dashboard.log
+game/dashboard_runs/
