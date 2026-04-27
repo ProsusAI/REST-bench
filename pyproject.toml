@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rest_sim"
+version = "0.2.0"
+description = "Restaurant management simulation — The Rotterdam Table"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --tb=short"
+filterwarnings = ["ignore::DeprecationWarning"]
