@@ -47,7 +47,6 @@ class Table:
     id: str
     seats: int
     location: str  # "window", "center", "bar", "patio", "booth"
-    combinable_with: list[str] = field(default_factory=list)
 
 
 TABLES: list[Table] = [

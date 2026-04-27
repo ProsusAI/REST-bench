@@ -13,6 +13,10 @@ from .game_state import (
     PERISHABLE_CATEGORIES, PERISHABLE_SPOILAGE_RATE,
     current_date, date_for,
 )
+from .tuning import (
+    COMPETITOR, INCIDENT, INVENTORY, MARKETING, REPUTATION,
+    SHOCK, STAFF as STAFF_CFG, WEATHER,
+)
 
 
 def _default_staff_count_for_day(dow: int) -> dict[str, int]:
@@ -66,10 +70,7 @@ def staffing_pressure(state: dict, date: str) -> float:
     dow = datetime.fromisoformat(date).weekday()
     default = _default_staff_count_for_day(dow)
     effective = scheduled_staff_for_date(state, date)
-    # Weight kitchen + server roles most heavily
-    weights = {"line_cook": 2.0, "sous_chef": 1.5, "chef": 1.0,
-               "server": 2.0, "host": 1.0, "bartender": 1.0,
-               "busser": 0.5, "dishwasher": 0.5, "manager": 0.3}
+    weights = STAFF_CFG.PRESSURE_WEIGHTS
     num = den = 0.0
     for role, w in weights.items():
         d = default.get(role, 0)
@@ -110,31 +111,97 @@ def apply_spoilage(state: dict) -> dict[str, int]:
 
 
 def apply_ingredient_shock(state: dict, rng: np.random.Generator) -> float | None:
-    """Random walk on global ingredient price multiplier. Occasional shocks."""
-    # Tiny daily drift
-    state["ingredient_price_multiplier"] *= float(np.exp(rng.normal(0, 0.01)))
-    # 5% chance per day of a notable shock (±10–25%)
-    shock = None
-    if rng.random() < 0.05:
-        shock = float(rng.choice([-0.20, -0.15, -0.10, 0.10, 0.15, 0.20, 0.25]))
-        state["ingredient_price_multiplier"] *= (1.0 + shock)
-    # Clamp to sane range
-    state["ingredient_price_multiplier"] = float(
-        np.clip(state["ingredient_price_multiplier"], 0.6, 2.0)
+    """Daily drift + scheduled shocks (Phase 2.4).
+
+    Shocks are no longer surprise-rolled per day; they are scheduled by
+    earlier `roll_supplier_news` calls 1-3 days in advance. This day-sim
+    step:
+      1. Applies a small daily log-normal drift (unchanged).
+      2. Fires any scheduled shock whose date matches today.
+      3. Clamps the multiplier into [0.6, 2.0].
+    """
+    from .game_state import current_date
+    today = current_date(state)
+
+    state["ingredient_price_multiplier"] *= float(
+        np.exp(rng.normal(0, SHOCK.DAILY_DRIFT_SIGMA))
     )
+
+    shock = None
+    news = state.get("supplier_news", [])
+    remaining = []
+    for item in news:
+        if item["fire_on_date"] == today:
+            # Realized magnitude has noise around the predicted center.
+            mag = float(item["predicted_direction"]) * float(np.abs(
+                rng.normal(item["predicted_magnitude_center"],
+                           item["predicted_magnitude_sigma"])
+            ))
+            state["ingredient_price_multiplier"] *= (1.0 + mag)
+            shock = mag
+            item["realized_shock"] = round(mag, 4)
+            state.setdefault("supplier_news_history", []).append(item)
+        elif item["fire_on_date"] > today:
+            remaining.append(item)
+        # past-due (we somehow skipped it) gets archived without firing
+    state["supplier_news"] = remaining
+
+    state["ingredient_price_multiplier"] = float(np.clip(
+        state["ingredient_price_multiplier"],
+        SHOCK.PRICE_MULT_MIN, SHOCK.PRICE_MULT_MAX,
+    ))
     return shock
 
 
+def roll_supplier_news(state: dict, rng: np.random.Generator) -> dict | None:
+    """Phase 2.4: probabilistically queue a 1-3-day-ahead shock notice."""
+    from datetime import datetime, timedelta
+    from .game_state import current_date
+    from .tuning import SUPPLIER_NEWS
+
+    if rng.random() >= SUPPLIER_NEWS.DAILY_NEWS_PROBABILITY:
+        return None
+    today = current_date(state)
+    lead = int(rng.choice(SUPPLIER_NEWS.LEAD_TIMES_DAYS))
+    fire_date = (datetime.fromisoformat(today)
+                 + timedelta(days=lead)).date().isoformat()
+    direction = -1 if rng.random() < 0.45 else +1   # slight upward bias
+    center = float(rng.choice([0.10, 0.15, 0.20, 0.25]))
+    sigma = float(rng.uniform(0.02, 0.06))
+    confidence = float(rng.uniform(0.65, 0.92))
+    item = {
+        "posted_on": today,
+        "fire_on_date": fire_date,
+        "lead_days": lead,
+        "predicted_direction": direction,
+        "predicted_magnitude_center": center,
+        "predicted_magnitude_sigma": sigma,
+        "predicted_magnitude_range": [
+            round(center - 2*sigma, 3), round(center + 2*sigma, 3),
+        ],
+        "confidence": round(confidence, 2),
+        "headline": _format_news_headline(direction, center, lead, confidence),
+    }
+    state.setdefault("supplier_news", []).append(item)
+    return item
+
+
+def _format_news_headline(direction: int, center: float, lead: int, conf: float) -> str:
+    sign = "up" if direction > 0 else "down"
+    return (f"Supplier alert: ingredient prices likely {sign} "
+            f"~{int(center*100)}% in {lead} day{'s' if lead != 1 else ''} "
+            f"(confidence {conf:.0%})")
+
+
 def restock_cost(state: dict, item_id: str, qty: int) -> float:
-    """Cost to restock: unit food cost × qty × 1.15 (supplier markup)."""
-    # Find food cost (apply current ingredient multiplier)
+    """Cost to restock: unit food cost × qty × supplier markup."""
+    mult = state["ingredient_price_multiplier"] * INVENTORY.SUPPLIER_MARKUP
     for row in MENU_ITEMS:
         if row[0] == item_id:
-            base_cost = row[4]
-            return round(base_cost * state["ingredient_price_multiplier"] * qty * 1.15, 2)
+            return round(row[4] * mult * qty, 2)
     for a in state["menu_added"]:
         if a["id"] == item_id:
-            return round(float(a["cost"]) * state["ingredient_price_multiplier"] * qty * 1.15, 2)
+            return round(float(a["cost"]) * mult * qty, 2)
     return 0.0
 
 
@@ -142,48 +209,41 @@ def marketing_lift(spend_eur: float) -> float:
     """Arrival rate multiplier from marketing spend with diminishing returns."""
     if spend_eur <= 0:
         return 1.0
-    return 1.0 + 0.5 * (1.0 - np.exp(-spend_eur / 400.0))
+    return 1.0 + MARKETING.MAX_LIFT * (
+        1.0 - np.exp(-spend_eur / MARKETING.DIMINISHING_RETURNS_HALFLIFE_EUR)
+    )
 
 
 def reputation_multiplier(reputation: float) -> float:
     """Arrival rate multiplier from current reputation (anchored at 4.0)."""
-    return float(max(0.6, min(1.4, 1.0 + 0.25 * (reputation - 4.0))))
+    raw = 1.0 + REPUTATION.MULT_PER_STAR * (reputation - REPUTATION.ANCHOR)
+    return float(max(REPUTATION.MULT_FLOOR, min(REPUTATION.MULT_CEIL, raw)))
 
 
 def update_reputation(state: dict, mean_satisfaction: float) -> None:
-    """Slow EWMA toward a satisfaction-implied score (mean 0.5 → 3.0 stars,
-    mean 0.9 → 4.8 stars)."""
-    implied = 2.0 + 3.0 * float(mean_satisfaction)  # roughly 2.0–5.0
-    state["satisfaction_ewma"] = 0.85 * state["satisfaction_ewma"] + 0.15 * mean_satisfaction
-    state["reputation"] = round(0.90 * state["reputation"] + 0.10 * implied, 3)
+    """Slow EWMA toward a satisfaction-implied star score."""
+    implied = REPUTATION.IMPLIED_INTERCEPT + REPUTATION.IMPLIED_SLOPE * float(mean_satisfaction)
+    state["satisfaction_ewma"] = (
+        REPUTATION.EWMA_SATISFACTION_RETAIN * state["satisfaction_ewma"]
+        + (1.0 - REPUTATION.EWMA_SATISFACTION_RETAIN) * mean_satisfaction
+    )
+    state["reputation"] = round(
+        REPUTATION.EWMA_REPUTATION_RETAIN * state["reputation"]
+        + (1.0 - REPUTATION.EWMA_REPUTATION_RETAIN) * implied,
+        3,
+    )
 
 
 def sample_weather(rng: np.random.Generator, dow: int) -> dict:
-    """Weather with seasonal-ish bias. Returns {condition, arrival_multiplier}."""
-    conditions = ["sunny", "cloudy", "rain", "storm"]
-    # Slightly better weekends to match Rotterdam spring
-    base_probs = [0.30, 0.45, 0.20, 0.05]
-    if dow in (5, 6):
-        base_probs = [0.35, 0.45, 0.17, 0.03]
-    c = rng.choice(conditions, p=base_probs).item()
-    mult = {"sunny": 1.08, "cloudy": 1.0, "rain": 0.85, "storm": 0.65}[c]
-    return {"condition": c, "mult": mult}
+    """Weather with weekend bias. Returns {condition, mult}."""
+    probs = WEATHER.BASE_PROBS["weekend" if dow in (5, 6) else "weekday"]
+    c = rng.choice(list(WEATHER.CONDITIONS), p=probs).item()
+    return {"condition": c, "mult": WEATHER.MULTIPLIERS[c]}
 
 
 def roll_incident(rng: np.random.Generator, date: str) -> dict | None:
     """Low-probability daily incidents. Return event dict or None."""
-    if rng.random() > 0.08:
+    if rng.random() > INCIDENT.DAILY_PROBABILITY:
         return None
-    kind = rng.choice([
-        "oven_breakdown", "staff_sick", "bad_review", "noise_complaint",
-        "health_inspection", "power_flicker",
-    ]).item()
-    effects = {
-        "oven_breakdown":    {"kitchen_efficiency": 0.6, "cost": 350.0},
-        "staff_sick":         {"staff_efficiency": 0.85, "cost": 0.0},
-        "bad_review":         {"reputation_delta": -0.10, "cost": 0.0},
-        "noise_complaint":    {"reputation_delta": -0.05, "cost": 150.0},
-        "health_inspection":  {"reputation_delta": 0.05, "cost": 0.0},
-        "power_flicker":      {"kitchen_efficiency": 0.85, "cost": 80.0},
-    }[kind]
-    return {"date": date, "kind": kind, **effects}
+    kind = rng.choice(list(INCIDENT.KINDS)).item()
+    return {"date": date, "kind": kind, **INCIDENT.EFFECTS[kind]}

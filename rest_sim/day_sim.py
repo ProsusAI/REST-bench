@@ -15,15 +15,22 @@ from typing import Any
 import numpy as np
 
 from . import distributions as dists
+from . import cohorts as cohort_mod
+from . import reviews as review_mod
 from .config import RESTAURANT, TABLES
 from .economy import (
     staffing_pressure, payroll_for_date, fixed_costs_for_date,
     apply_spoilage, apply_ingredient_shock, marketing_lift,
     reputation_multiplier, update_reputation, sample_weather, roll_incident,
+    roll_supplier_news,
 )
 from .game_state import (
-    current_date, date_for, active_promo_discount, effective_menu,
-    log_decision,
+    current_date, date_for, active_promo_discount, active_happy_hour_discount,
+    effective_menu, log_decision,
+)
+from .tuning import (
+    COMPETITOR, MARKETING, REVIEW, SATISFACTION, STAFF,
+    SUPPLIER_NEWS, SUBSTITUTION, WAIT,
 )
 
 
@@ -90,6 +97,7 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         state["incidents_log"].append(incident)
 
     ingredient_shock = apply_ingredient_shock(state, rng)
+    new_news = roll_supplier_news(state, rng)
     spoiled = apply_spoilage(state)
 
     # --- Effective menu for the day (after price overrides + promos) ---
@@ -109,9 +117,10 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
     m_mult = marketing_lift(spend)
     r_mult = reputation_multiplier(state["reputation"])
     w_mult = weather["mult"]
-    c_mult = 0.90 if state["competitor_active"] else 1.0
-    l_mult = 1.05 if state["loyalty_enabled"] else 1.0
-    demand_multiplier = m_mult * r_mult * w_mult * c_mult * l_mult
+    c_mult = COMPETITOR.ARRIVAL_MULT_WHEN_ACTIVE if state["competitor_active"] else 1.0
+    l_mult = 1.0 + MARKETING.LOYALTY_ARRIVAL_LIFT if state["loyalty_enabled"] else 1.0
+    cohort_mult = cohort_mod.cohort_demand_lift(state.get("cohorts"))
+    demand_multiplier = m_mult * r_mult * w_mult * c_mult * l_mult * cohort_mult
 
     # --- Walk-in arrival stream (thinned NHPP, scaled by demand multiplier) ---
     walk_ins = []
@@ -139,11 +148,14 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
 
     # --- Staffing / kitchen efficiency modifiers ---
     pressure = staffing_pressure(state, date_iso)        # ~1.0 baseline
-    staff_eff_base = min(1.5, pressure)                  # understaffed slows everyone
+    staff_eff_base = min(STAFF.EFFICIENCY_CEIL, pressure)
     kitchen_eff = 1.0
     satisfaction_floor_penalty = 0.0
-    if pressure < 0.8:
-        satisfaction_floor_penalty += (0.8 - pressure) * 0.4
+    if pressure < SATISFACTION.UNDERSTAFF_PENALTY_THRESHOLD:
+        satisfaction_floor_penalty += (
+            (SATISFACTION.UNDERSTAFF_PENALTY_THRESHOLD - pressure)
+            * SATISFACTION.UNDERSTAFF_PENALTY_SLOPE
+        )
     if incident:
         kitchen_eff *= incident.get("kitchen_efficiency", 1.0)
         staff_eff_base *= incident.get("staff_efficiency", 1.0)
@@ -184,7 +196,14 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         seated_at = None
         wait_tolerance = dists.sample_wait_tolerance(rng, arrival_min)
         # Unhappy reputation shortens patience
-        wait_tolerance *= max(0.5, min(1.3, 0.7 + 0.1 * (state["reputation"] - 3.0)))
+        rep_scale = (
+            WAIT.REPUTATION_TOLERANCE_INTERCEPT
+            + WAIT.REPUTATION_TOLERANCE_SLOPE * (state["reputation"] - 3.0)
+        )
+        wait_tolerance *= max(
+            WAIT.REPUTATION_TOLERANCE_FLOOR,
+            min(WAIT.REPUTATION_TOLERANCE_CEIL, rep_scale),
+        )
         seat_attempt = arrival_min
         while True:
             candidates = [t for t in tables
@@ -218,8 +237,8 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         # --- Order generation ---
         item_counts = dists.sample_item_counts(rng, party_size, period)
         staff_eff = dists.sample_staff_efficiency(rng) * staff_eff_base
-        if staff_eff < 0.4:
-            staff_eff = 0.4
+        if staff_eff < STAFF.EFFICIENCY_FLOOR:
+            staff_eff = STAFF.EFFICIENCY_FLOOR
 
         order_counter += 1
         order_id = f"O{day_index:02d}{order_counter:06d}"
@@ -230,17 +249,41 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         discount_total = 0.0
         kitchen_times = []
         outage_hit = False
+        substituted = False  # Phase 2.3: separate flag for sat tax accounting
+
+        # Phase 2.3 — substitution fallbacks: if a guest's chosen category
+        # is fully out, try the next-best category with similar role.
+        FALLBACK = {
+            "main": ["main", "appetizer"],
+            "appetizer": ["appetizer", "side"],
+            "side": ["side", "appetizer"],
+            "dessert": ["dessert", "drink"],
+            "drink": ["drink"],
+        }
 
         for cat, count in item_counts.items():
             if count == 0 or cat not in menu_by_cat:
                 continue
-            # Filter to items that still have stock
-            cat_items = [it for it in menu_by_cat[cat]
-                          if inv.get(it["id"], 0) > 0]
+            cat_items = []
+            served_cat = cat
+            for fallback_cat in FALLBACK.get(cat, [cat]):
+                if fallback_cat not in menu_by_cat:
+                    continue
+                candidates = [it for it in menu_by_cat[fallback_cat]
+                              if inv.get(it["id"], 0) > 0]
+                if candidates:
+                    cat_items = candidates
+                    served_cat = fallback_cat
+                    if served_cat != cat:
+                        substituted = True
+                        outages.append({"date": date_iso, "category": cat,
+                                        "substituted_with": served_cat})
+                    break
             if not cat_items:
                 outage_hit = True
                 outages.append({"date": date_iso, "category": cat})
                 continue
+            cat = served_cat  # use the served category from here on
             weights = np.array([m["popularity_weight"] for m in cat_items])
             weights /= weights.sum()
             draws = rng.choice(len(cat_items), size=count, p=weights)
@@ -255,8 +298,10 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
                     continue
                 inv[item["id"]] = stock - qty
                 unit_price = item["price_eur"]
-                # Apply active promo
-                disc = active_promo_discount(state, cat, date_iso)
+                # Apply active promo + happy-hour (capped at 50%, additive)
+                promo_disc = active_promo_discount(state, cat, date_iso)
+                hh_disc = active_happy_hour_discount(state, cat, date_iso, arrival_min)
+                disc = min(0.5, promo_disc + hh_disc)
                 line_discount = unit_price * disc * qty
                 line_subtotal = unit_price * qty - line_discount
                 line_food_cost = item["food_cost_eur"] * qty
@@ -303,9 +348,12 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
 
         sat = dists.sample_satisfaction(rng, seating_wait, kitchen_wait)
         if outage_hit:
-            sat *= 0.85
+            sat *= SATISFACTION.OUTAGE_HIT_MULTIPLIER
+        if substituted:
+            sat *= (1.0 - SUBSTITUTION.SAT_TAX)
         sat = max(0.0, sat - satisfaction_floor_penalty)
         sat_values.append(sat)
+        review_mod.queue_review(state, day_index, sat, rng)
 
         if party_size >= RESTAURANT["auto_gratuity_party_threshold"]:
             tip_pct = RESTAURANT["auto_gratuity_rate"]
@@ -350,11 +398,20 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         order_items.extend(order_lines)
 
     # --- End-of-day economics ---
-    mean_sat = float(np.mean(sat_values)) if sat_values else 0.80
-    update_reputation(state, mean_sat)
+    mean_sat = float(np.mean(sat_values)) if sat_values else SATISFACTION.DEFAULT_DAY_VALUE_NO_VISITS
+
+    # Phase 2.2: walkouts may post 0-star ghost reviews.
+    for _ in range(day_walkouts):
+        review_mod.queue_ghost_walkout_review(state, day_index, rng)
+    # Phase 2.2: post all reviews due today; reputation EWMAs over them.
+    posted_sats, posted_count = review_mod.post_due_reviews(state, day_index)
+    posted_mean_sat = float(np.mean(posted_sats)) if posted_sats else None
+
     if incident and "reputation_delta" in incident:
+        from .tuning import REPUTATION as _REP
         state["reputation"] = round(
-            max(1.0, min(5.0, state["reputation"] + incident["reputation_delta"])), 3
+            max(_REP.MIN, min(_REP.MAX, state["reputation"] + incident["reputation_delta"])),
+            3,
         )
 
     payroll = payroll_for_date(state, date_iso)
@@ -368,6 +425,21 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
                   - payroll - fixed_total - incident_cost
                   - marketing_cost - cogs_cash)
     state["cash_eur"] = round(state["cash_eur"] + cash_delta, 2)
+
+    # --- Bankruptcy check (Phase 1.2) ---
+    from .tuning import SCORE as _SCORE
+    if (not state.get("bankrupt", False)
+            and state["cash_eur"] < _SCORE.BANKRUPTCY_THRESHOLD_EUR):
+        state["bankrupt"] = True
+        state["bankrupt_on_date"] = date_iso
+
+    # --- Cohort dynamics (Phase 2.1) ---
+    cohort_delta = cohort_mod.update_cohorts(
+        state,
+        mean_satisfaction=mean_sat,
+        walkouts=day_walkouts,
+        marketing_spend_eur=marketing_cost,
+    )
 
     pnl_row = {
         "date": date_iso, "day_index": day_index,
@@ -407,6 +479,14 @@ def run_one_day(state: dict, rng: np.random.Generator) -> dict:
         "incident": incident["kind"] if incident else None,
         "spoilage_units": int(sum(spoiled.values())),
         "ingredient_shock": ingredient_shock,
+        # Phase 2.x metrics
+        "reviews_posted": posted_count,
+        "reviews_posted_mean_sat": (
+            round(posted_mean_sat, 3) if posted_mean_sat is not None else None
+        ),
+        "cohorts": dict(state.get("cohorts", {})),
+        "cohort_delta": cohort_delta,
+        "cohort_demand_lift": round(cohort_mult, 3),
     }
     state["daily_kpis_history"].append(kpi)
     state["day_index"] += 1

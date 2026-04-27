@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 
+from .tuning import SCORE
+
 
 def pnl_summary(state: dict, last_n_days: int | None = None) -> dict:
     rows = state["pnl_history"]
@@ -107,30 +109,120 @@ def cohort_breakdown(state: dict, last_n_days: int = 7) -> dict:
     }
 
 
-def status_snapshot(state: dict) -> dict:
-    """Terse current state for the agent to read each turn."""
-    h = state["daily_kpis_history"]
-    last = h[-1] if h else None
-    next_date = None
-    from . import game_state
-    if not game_state.is_done(state):
-        next_date = game_state.current_date(state)
-    alerts = []
-    # Inventory alerts
+def _alerts(state: dict, next_date: str | None) -> list[str]:
+    out = []
+    if state.get("bankrupt", False):
+        out.append(
+            f"BANKRUPT on {state.get('bankrupt_on_date')} — simulation halted"
+        )
     low = sorted(
         [(k, v) for k, v in state["inventory"].items() if v < 10],
         key=lambda x: x[1]
     )[:10]
     if low:
-        alerts.append(f"low stock: " + ", ".join(f"{k}={v}" for k, v in low))
+        out.append("low stock: " + ", ".join(f"{k}={v}" for k, v in low))
     if state["cash_eur"] < 2000:
-        alerts.append(f"CASH LOW: €{state['cash_eur']:.0f}")
+        out.append(f"CASH LOW: €{state['cash_eur']:.0f}")
     if state["reputation"] < 3.8:
-        alerts.append(f"reputation declining: {state['reputation']:.2f}")
+        out.append(f"reputation declining: {state['reputation']:.2f}")
     if state["ingredient_price_multiplier"] > 1.2:
-        alerts.append(
+        out.append(
             f"ingredient prices up {(state['ingredient_price_multiplier']-1)*100:.0f}%"
         )
+    return out
+
+
+def manager_view(state: dict) -> dict:
+    """Phase 4.1 — masked status the agent sees each turn.
+
+    A real restaurant manager doesn't see exact cohort counts, raw
+    same-day diner satisfaction values, or future state. They see:
+    - the booking system's near-term reservations (counts only)
+    - reviews posted on review sites (lagging)
+    - a vague sense of "we have lots of regulars" (banded)
+    - supplier alerts (probabilistic, lead time)
+    - last week's KPIs (not full history)
+    """
+    from . import game_state
+    from . import cohorts as cohort_mod
+
+    h = state["daily_kpis_history"]
+    last = h[-1] if h else None
+    last_7 = h[-7:] if h else []
+    next_date = None
+    if not game_state.is_done(state):
+        next_date = game_state.current_date(state)
+
+    # Strip the per-day cohort dump and raw same-day satisfaction from KPIs.
+    masked_last_7 = []
+    for r in last_7:
+        masked_last_7.append({
+            k: v for k, v in r.items()
+            if k not in ("hour_heat", "cohorts", "cohort_delta")
+        })
+
+    cohort_sizes_band = (
+        cohort_mod.cohort_bands(state["cohorts"]) if state.get("cohorts") else {}
+    )
+
+    # Supplier news: only show what an alert system would actually show.
+    upcoming_news = [
+        {
+            "fire_on_date": n["fire_on_date"],
+            "lead_days": n["lead_days"],
+            "headline": n["headline"],
+            "predicted_magnitude_range": n["predicted_magnitude_range"],
+            "confidence": n["confidence"],
+        }
+        for n in state.get("supplier_news", [])
+    ]
+
+    return {
+        "day_index": state["day_index"],
+        "total_days": state["total_days"],
+        "next_date": next_date,
+        "cash_eur": state["cash_eur"],
+        "reputation": state["reputation"],
+        # The manager sees a public review-summary score, not the inner EWMA on
+        # raw diner satisfaction — that's an internal engine signal.
+        "satisfaction_ewma": round(state["satisfaction_ewma"], 3),
+        "ingredient_price_multiplier": round(state["ingredient_price_multiplier"], 3),
+        "loyalty_enabled": state["loyalty_enabled"],
+        "competitor_active": state["competitor_active"],
+        "active_promos": state["active_promos"],
+        "active_happy_hours": state.get("happy_hours", []),
+        "upcoming_staffing_overrides": {
+            d: v for d, v in state["staffing_override"].items()
+            if d >= (next_date or "")
+        },
+        "upcoming_reservation_caps": {
+            d: v for d, v in state["reservation_caps"].items()
+            if d >= (next_date or "")
+        },
+        "cohort_sizes_band": cohort_sizes_band,
+        "supplier_news": upcoming_news,
+        "reviews_posted_today": last["reviews_posted"] if last else 0,
+        "last_7_days_kpis": masked_last_7,
+        "alerts": _alerts(state, next_date),
+    }
+
+
+def status_snapshot(state: dict, *, full: bool = False) -> dict:
+    """Status for the agent's turn.
+
+    By default returns the masked `manager_view`. Pass `full=True` to
+    get the legacy unfiltered snapshot (used by tests and the dashboard
+    backend — agents must NOT use this).
+    """
+    if not full:
+        return manager_view(state)
+
+    from . import game_state
+    h = state["daily_kpis_history"]
+    last = h[-1] if h else None
+    next_date = None
+    if not game_state.is_done(state):
+        next_date = game_state.current_date(state)
     return {
         "day_index": state["day_index"],
         "total_days": state["total_days"],
@@ -142,6 +234,10 @@ def status_snapshot(state: dict) -> dict:
         "loyalty_enabled": state["loyalty_enabled"],
         "competitor_active": state["competitor_active"],
         "active_promos": state["active_promos"],
+        "active_happy_hours": state.get("happy_hours", []),
+        "cohorts": state.get("cohorts", {}),
+        "supplier_news": state.get("supplier_news", []),
+        "review_queue_length": len(state.get("review_queue", [])),
         "upcoming_staffing_overrides": {
             d: v for d, v in state["staffing_override"].items()
             if d >= (next_date or "")
@@ -151,7 +247,44 @@ def status_snapshot(state: dict) -> dict:
             if d >= (next_date or "")
         },
         "last_day_kpi": last,
-        "alerts": alerts,
+        "alerts": _alerts(state, next_date),
+    }
+
+
+def compute_score(
+    *, total_profit_eur: float, mean_satisfaction: float,
+    mean_reputation: float, total_walkouts: int, bankrupt: bool,
+) -> dict:
+    """Smooth, walkout-aware composite score.
+
+    Replaces the old cliff penalties (`max(0, 0.75 − sat) × 100k` etc.)
+    with quadratic penalties that share the same gradient direction but
+    avoid catastrophic-cliff incentives. Walkouts get an explicit linear
+    cost (they were ignored before), and bankruptcy floors the score so
+    the agent can't hail-mary into negative cash.
+    """
+    if bankrupt:
+        return {
+            "score_eur": float(SCORE.BANKRUPT_SCORE_EUR),
+            "profit_term_eur": round(total_profit_eur, 2),
+            "satisfaction_penalty_eur": 0.0,
+            "reputation_penalty_eur": 0.0,
+            "walkout_penalty_eur": 0.0,
+            "bankrupt": True,
+        }
+    sat_gap = max(0.0, SCORE.TARGET_SATISFACTION - mean_satisfaction)
+    rep_gap = max(0.0, SCORE.TARGET_REPUTATION - mean_reputation)
+    sat_pen = (sat_gap ** 2) * SCORE.SATISFACTION_PENALTY_SCALE_EUR
+    rep_pen = (rep_gap ** 2) * SCORE.REPUTATION_PENALTY_SCALE_EUR
+    walk_pen = total_walkouts * SCORE.WALKOUT_PENALTY_PER_VISIT_EUR
+    score = total_profit_eur - sat_pen - rep_pen - walk_pen
+    return {
+        "score_eur": round(score, 2),
+        "profit_term_eur": round(total_profit_eur, 2),
+        "satisfaction_penalty_eur": round(sat_pen, 2),
+        "reputation_penalty_eur": round(rep_pen, 2),
+        "walkout_penalty_eur": round(walk_pen, 2),
+        "bankrupt": False,
     }
 
 
@@ -165,7 +298,14 @@ def scorecard(state: dict) -> dict:
                               for r in state["daily_kpis_history"]])) if days else 0
     mean_rep = float(np.mean([r["reputation"]
                               for r in state["daily_kpis_history"]])) if days else 0
-    total_walkouts = sum(r["walkouts"] for r in state["daily_kpis_history"])
+    total_walkouts = int(sum(r["walkouts"] for r in state["daily_kpis_history"]))
+    score = compute_score(
+        total_profit_eur=total_profit,
+        mean_satisfaction=mean_sat,
+        mean_reputation=mean_rep,
+        total_walkouts=total_walkouts,
+        bankrupt=bool(state.get("bankrupt", False)),
+    )
     return {
         "days_simulated": days,
         "starting_cash_eur": state["starting_cash_eur"],
@@ -177,7 +317,9 @@ def scorecard(state: dict) -> dict:
         "gross_margin_pct": round(1 - total_cogs / total_rev, 3) if total_rev else 0,
         "mean_satisfaction": round(mean_sat, 3),
         "mean_reputation": round(mean_rep, 3),
-        "total_walkouts": int(total_walkouts),
+        "total_walkouts": total_walkouts,
         "incidents": len(state["incidents_log"]),
         "decisions": len(state["decisions_log"]),
+        "bankrupt": bool(state.get("bankrupt", False)),
+        **score,
     }
