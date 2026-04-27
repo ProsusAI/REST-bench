@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The Rotterdam Table — Live</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --panel2: #f4f6f8;
+      --line: #e5e7eb;
+      --text: #1f2328;
+      --muted: #5c6470;
+      --heading: #374151;
+      --accent: #7aa7e0;
+      --good: #7cc89a;
+      --warn: #e8c275;
+      --bad: #e8918d;
+      --good-ink: #2f7a4d;
+      --warn-ink: #8a6512;
+      --bad-ink: #a64842;
+      --shadow: 0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, #f6f8fb, #ffffff);
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 5;
+    }
+    header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: 0.2px; }
+    header .sep { width: 1px; height: 22px; background: var(--line); }
+    header .conn { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    header .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 6px rgba(232,145,141,0.5); }
+    header .conn.ok .dot { background: var(--good); box-shadow: 0 0 6px rgba(124,200,154,0.6); }
+    header select {
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--line); border-radius: 6px;
+      padding: 4px 8px; font-size: 12px;
+    }
+    header .grow { flex: 1; }
+    .kpis {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      padding: 12px 16px 0;
+    }
+    .kpi {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 8px; padding: 10px 12px;
+      box-shadow: var(--shadow);
+    }
+    .kpi .label { color: var(--muted); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi .value { font-size: 22px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .kpi .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .kpi.good { background: #f0f8f3; border-color: #d6ebde; }
+    .kpi.warn { background: #fdf6e7; border-color: #f1e3bf; }
+    .kpi.bad  { background: #fdf0ef; border-color: #f1d4d2; }
+    .kpi.good .value { color: var(--good-ink); }
+    .kpi.warn .value { color: var(--warn-ink); }
+    .kpi.bad  .value { color: var(--bad-ink); }
+
+    main {
+      display: grid; gap: 12px; padding: 12px 16px;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 8px; padding: 12px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .panel h2 {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--heading); margin: 0 0 8px 0; font-weight: 600;
+    }
+    .charts > .panel + .panel { margin-top: 12px; }
+    canvas { width: 100% !important; max-height: 240px; }
+
+    table.compact {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    table.compact th, table.compact td {
+      padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line);
+    }
+    table.compact th { color: var(--muted); font-weight: 500; font-size: 11px; }
+    table.compact tbody tr:hover { background: #f8fafc; }
+    .scroll { max-height: 220px; overflow: auto; }
+    .row-bad td { color: var(--bad-ink); background: #fdf4f3; }
+    .row-warn td { color: var(--warn-ink); background: #fdf9ee; }
+
+    .heatmap {
+      display: grid; gap: 2px;
+      grid-template-columns: 60px repeat(24, 1fr);
+      font-size: 10px;
+    }
+    .heatmap .lbl { color: var(--muted); padding: 2px 4px; }
+    .heatmap .cell {
+      height: 18px; border-radius: 2px; background: #eef1f5;
+      position: relative;
+    }
+    .heatmap .cell[data-v]:not([data-v="0"])::after {
+      content: ""; position: absolute; inset: 0;
+      background: var(--accent); border-radius: 2px;
+      opacity: var(--alpha, 0);
+    }
+
+    .decisions li {
+      list-style: none; padding: 6px 4px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px; display: flex; gap: 8px;
+    }
+    .decisions li:last-child { border: 0; }
+    .decisions .when { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 56px; }
+    .decisions .kind { color: var(--accent); min-width: 80px; }
+    .decisions .detail { color: var(--text); flex: 1; word-break: break-word; }
+
+    .ascii-heat {
+      font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre; overflow: auto;
+      color: var(--muted); background: #f4f6f8;
+      padding: 8px; border-radius: 6px;
+      border: 1px solid var(--line);
+    }
+
+    .tag {
+      display: inline-block; padding: 2px 6px; border-radius: 4px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
+      background: #eef1f5; color: var(--muted); border: 1px solid var(--line);
+    }
+    .tag.live { background: #e6f4ec; color: var(--good-ink); border-color: #cbe6d4; }
+    .tag.replay { background: #fdf6e7; color: var(--warn-ink); border-color: #ecdcae; }
+    .tag.done { background: #fdf0ef; color: var(--bad-ink); border-color: #f1d4d2; }
+
+    nav.tabs {
+      display: flex; gap: 4px;
+      background: var(--panel); border-bottom: 1px solid var(--line);
+      padding: 0 16px;
+    }
+    nav.tabs button {
+      background: transparent; color: var(--muted);
+      border: 0; border-bottom: 2px solid transparent;
+      padding: 10px 14px; font: inherit;
+      cursor: pointer; font-size: 13px;
+    }
+    nav.tabs button:hover { color: var(--text); }
+    nav.tabs button.active {
+      color: var(--text); border-bottom-color: var(--accent);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .explore-grid {
+      display: grid; gap: 12px; padding: 12px 16px;
+      grid-template-columns: 240px minmax(0, 1fr);
+    }
+    .explore-grid aside {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 8px; padding: 8px; height: fit-content;
+      box-shadow: var(--shadow);
+    }
+    .explore-grid aside .group {
+      color: var(--muted); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.6px; padding: 8px 8px 4px; font-weight: 600;
+    }
+    .explore-grid aside button {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; text-align: left;
+      background: transparent; color: var(--text);
+      border: 0; border-radius: 6px;
+      padding: 6px 8px; font: inherit; font-size: 12px;
+      cursor: pointer;
+    }
+    .explore-grid aside button:hover { background: var(--panel2); }
+    .explore-grid aside button.active {
+      background: rgba(122,167,224,0.18);
+      color: #0969da;
+    }
+    .explore-grid aside button .count {
+      color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums;
+    }
+    .explore-grid main.viewer {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 8px; padding: 12px; min-height: 60vh;
+      box-shadow: var(--shadow); display: block;
+    }
+    .viewer-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .viewer-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+    .viewer-header .meta { color: var(--muted); font-size: 11px; }
+    .viewer-header .grow { flex: 1; }
+    .viewer-header .toggle {
+      display: inline-flex; gap: 0; border: 1px solid var(--line);
+      border-radius: 6px; overflow: hidden;
+    }
+    .viewer-header .toggle button {
+      background: transparent; color: var(--muted);
+      border: 0; padding: 4px 10px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .viewer-header .toggle button.active {
+      background: var(--panel2); color: var(--text);
+    }
+    .json-view {
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #f8f9fb; color: var(--text);
+      padding: 12px; border-radius: 6px;
+      border: 1px solid var(--line);
+      overflow: auto; max-height: 70vh;
+      white-space: pre;
+    }
+    .json-view .k { color: #0969da; }
+    .json-view .s { color: #0a7c5a; }
+    .json-view .n { color: #9a4f00; }
+    .json-view .b { color: #7c4cb3; }
+    .json-view .nl { color: var(--muted); }
+    .table-view { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .table-view th, .table-view td {
+      padding: 6px 8px; text-align: left;
+      border-bottom: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+    .table-view th {
+      color: var(--muted); font-weight: 500; font-size: 11px;
+      position: sticky; top: 0; background: var(--panel);
+    }
+    .table-view tbody tr:hover { background: #f8fafc; }
+    .table-wrap { max-height: 70vh; overflow: auto;
+      border: 1px solid var(--line); border-radius: 6px; }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .explore-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>The Rotterdam Table</h1>
+    <span class="tag" id="mode-tag">live</span>
+    <div class="sep"></div>
+    <div id="run-label" style="color: var(--muted); font-size: 12px;">no run yet</div>
+    <div class="grow"></div>
+    <select id="run-picker" title="View past runs">
+      <option value="">— Live —</option>
+    </select>
+    <div class="conn" id="conn"><span class="dot"></span><span>connecting…</span></div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="live" class="active">Live</button>
+    <button data-tab="explore">Explore the Restaurant</button>
+  </nav>
+
+  <div class="tab-panel active" id="tab-live">
+  <section class="kpis">
+    <div class="kpi"><div class="label">Day</div><div class="value" id="kpi-day">–</div><div class="sub" id="kpi-date">–</div></div>
+    <div class="kpi"><div class="label">Cash</div><div class="value" id="kpi-cash">–</div><div class="sub" id="kpi-cash-delta">–</div></div>
+    <div class="kpi"><div class="label">Reputation</div><div class="value" id="kpi-rep">–</div><div class="sub">target ≥ 4.0</div></div>
+    <div class="kpi"><div class="label">Satisfaction</div><div class="value" id="kpi-sat">–</div><div class="sub">target ≥ 0.75</div></div>
+    <div class="kpi"><div class="label">Visits today</div><div class="value" id="kpi-visits">–</div><div class="sub" id="kpi-walkouts">–</div></div>
+    <div class="kpi"><div class="label">Net profit / day</div><div class="value" id="kpi-profit">–</div><div class="sub" id="kpi-revenue">–</div></div>
+  </section>
+
+  <main>
+    <div class="charts">
+      <div class="panel">
+        <h2>Cash &amp; net profit by day</h2>
+        <canvas id="chart-cash"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Revenue, COGS &amp; payroll</h2>
+        <canvas id="chart-pnl"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Hourly arrivals (today)</h2>
+        <div class="heatmap" id="hour-heat"></div>
+      </div>
+      <div class="panel">
+        <h2>Last 14 days · arrival heatmap</h2>
+        <pre class="ascii-heat" id="ascii-heat">—</pre>
+      </div>
+    </div>
+    <aside>
+      <div class="panel">
+        <h2>Inventory <span style="color: var(--muted); font-weight: 400;">(low first)</span></h2>
+        <div class="scroll">
+          <table class="compact" id="inv-table">
+            <thead><tr><th>Item</th><th style="text-align:right">Qty</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" style="margin-top: 12px;">
+        <h2>Active promos</h2>
+        <table class="compact" id="promo-table">
+          <thead><tr><th>Category</th><th>Discount</th><th>Until</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="panel" style="margin-top: 12px;">
+        <h2>Recent decisions</h2>
+        <ul class="decisions scroll" id="decisions"></ul>
+      </div>
+      <div class="panel" style="margin-top: 12px;">
+        <h2>Alerts</h2>
+        <ul id="alerts" style="margin: 0; padding-left: 16px; color: var(--warn); font-size: 12px;"></ul>
+      </div>
+    </aside>
+  </main>
+  </div><!-- /tab-live -->
+
+  <div class="tab-panel" id="tab-explore">
+    <div class="explore-grid">
+      <aside id="explore-nav">
+        <div class="group">Loading…</div>
+      </aside>
+      <main class="viewer">
+        <div class="viewer-header">
+          <h3 id="viewer-title">Select a section</h3>
+          <span class="meta" id="viewer-meta"></span>
+          <span class="grow"></span>
+          <span class="toggle" id="viewer-toggle">
+            <button data-mode="auto" class="active">auto</button>
+            <button data-mode="json">json</button>
+          </span>
+        </div>
+        <div id="viewer-body"><div style="color: var(--muted)">Pick a section on the left to explore the restaurant configuration and live state.</div></div>
+      </main>
+    </div>
+  </div><!-- /tab-explore -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const fmt = {
+      eur: (v) => v == null ? "–" : "€" + Math.round(v).toLocaleString(),
+      eur2: (v) => v == null ? "–" : "€" + Number(v).toFixed(2),
+      pct: (v) => v == null ? "–" : (v * 100).toFixed(0) + "%",
+      num: (v) => v == null ? "–" : Number(v).toLocaleString(),
+      sig: (v, d=2) => v == null ? "–" : Number(v).toFixed(d),
+    };
+
+    const state = {
+      mode: "live",       // "live" | "replay"
+      run: null,          // RunBuffer snapshot
+      replayName: null,
+    };
+
+    // --- Charts -------------------------------------------------------------
+    const cashChart = new Chart($("chart-cash"), {
+      type: "line",
+      data: { labels: [], datasets: [
+        { label: "Cash €", data: [], borderColor: "#7aa7e0", backgroundColor: "rgba(122,167,224,0.18)",
+          tension: 0.25, fill: true, yAxisID: "y" },
+        { label: "Net profit €", data: [], borderColor: "#7cc89a", backgroundColor: "rgba(124,200,154,0.18)",
+          tension: 0.25, fill: false, yAxisID: "y1" },
+      ]},
+      options: {
+        animation: false, responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { ticks: { color: "#5c6470" }, grid: { color: "rgba(15,23,42,0.06)" } },
+          y: { ticks: { color: "#5176a8" }, grid: { color: "rgba(15,23,42,0.06)" }, position: "left" },
+          y1: { ticks: { color: "#2f7a4d" }, grid: { display: false }, position: "right" },
+        },
+        plugins: { legend: { labels: { color: "#1f2328" } } },
+      },
+    });
+
+    const pnlChart = new Chart($("chart-pnl"), {
+      type: "bar",
+      data: { labels: [], datasets: [
+        { label: "Revenue", data: [], backgroundColor: "rgba(122,167,224,0.65)", stack: "rev" },
+        { label: "COGS",    data: [], backgroundColor: "rgba(232,145,141,0.65)", stack: "cost" },
+        { label: "Payroll", data: [], backgroundColor: "rgba(232,194,117,0.7)",  stack: "cost" },
+      ]},
+      options: {
+        animation: false, responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#5c6470" }, grid: { color: "rgba(15,23,42,0.06)" }, stacked: false },
+          y: { ticks: { color: "#5c6470" }, grid: { color: "rgba(15,23,42,0.06)" }, beginAtZero: true },
+        },
+        plugins: { legend: { labels: { color: "#1f2328" } } },
+      },
+    });
+
+    // --- Renderers ----------------------------------------------------------
+    function setMode(mode, label) {
+      state.mode = mode;
+      const tag = $("mode-tag");
+      tag.textContent = mode;
+      tag.className = "tag " + mode;
+      if (label) $("run-label").textContent = label;
+    }
+
+    function setConn(ok, msg) {
+      const c = $("conn");
+      c.classList.toggle("ok", !!ok);
+      c.querySelector("span:last-child").textContent = msg;
+    }
+
+    function pickKpiClass(el, value, kind) {
+      el.classList.remove("good", "warn", "bad");
+      if (value == null) return;
+      if (kind === "rep") {
+        el.classList.add(value >= 4.0 ? "good" : value >= 3.5 ? "warn" : "bad");
+      } else if (kind === "sat") {
+        el.classList.add(value >= 0.78 ? "good" : value >= 0.72 ? "warn" : "bad");
+      } else if (kind === "cash") {
+        el.classList.add(value >= 5000 ? "good" : value >= 0 ? "warn" : "bad");
+      } else if (kind === "profit") {
+        el.classList.add(value >= 0 ? "good" : "bad");
+      }
+    }
+
+    function renderHeader() {
+      const init = state.run?.init || {};
+      const days = state.run?.days || [];
+      const last = days[days.length - 1];
+      const status = state.run?.status || last?.status || {};
+      const total = init.total_days ?? status.total_days ?? "–";
+      $("kpi-day").textContent = (status.day_index ?? days.length) + " / " + total;
+      $("kpi-date").textContent = status.next_date || last?.day_advanced || init.start_date || "–";
+      const cash = status.cash_eur ?? last?.pnl?.cash_end_eur;
+      $("kpi-cash").textContent = fmt.eur(cash);
+      pickKpiClass($("kpi-cash").parentElement, cash, "cash");
+      const startCash = init.starting_cash_eur ?? init.starting_cash;
+      if (cash != null && startCash != null) {
+        const d = cash - startCash;
+        $("kpi-cash-delta").textContent = (d >= 0 ? "+" : "") + fmt.eur(d) + " from start";
+      } else { $("kpi-cash-delta").textContent = "–"; }
+      const rep = status.reputation ?? last?.kpi?.reputation;
+      $("kpi-rep").textContent = fmt.sig(rep, 2);
+      pickKpiClass($("kpi-rep").parentElement, rep, "rep");
+      const sat = status.satisfaction_ewma ?? last?.kpi?.mean_satisfaction;
+      $("kpi-sat").textContent = fmt.pct(sat);
+      pickKpiClass($("kpi-sat").parentElement, sat, "sat");
+      const visits = last?.kpi?.visits;
+      $("kpi-visits").textContent = visits != null ? fmt.num(visits) : "–";
+      const walkouts = last?.kpi?.walkouts;
+      $("kpi-walkouts").textContent = walkouts != null ? walkouts + " walkouts" : "–";
+      const profit = last?.pnl?.net_profit_eur;
+      $("kpi-profit").textContent = fmt.eur(profit);
+      pickKpiClass($("kpi-profit").parentElement, profit, "profit");
+      const rev = last?.pnl?.revenue_eur;
+      $("kpi-revenue").textContent = rev != null ? "rev " + fmt.eur(rev) : "–";
+
+      const restName = init.restaurant?.name || init.restaurant_name || "The Rotterdam Table";
+      const seed = init.seed != null ? "· seed " + init.seed : "";
+      const startDate = init.start_date ? "· " + init.start_date : "";
+      $("run-label").textContent = `${restName} ${startDate} ${seed}`;
+    }
+
+    function renderCharts() {
+      const days = state.run?.days || [];
+      const labels = days.map(d => (d.kpi?.date || d.day_advanced || "").slice(5));
+      cashChart.data.labels = labels;
+      cashChart.data.datasets[0].data = days.map(d => d.pnl?.cash_end_eur ?? null);
+      cashChart.data.datasets[1].data = days.map(d => d.pnl?.net_profit_eur ?? null);
+      cashChart.update("none");
+
+      pnlChart.data.labels = labels;
+      pnlChart.data.datasets[0].data = days.map(d => d.pnl?.revenue_eur ?? 0);
+      pnlChart.data.datasets[1].data = days.map(d => d.pnl?.cogs_eur ?? 0);
+      pnlChart.data.datasets[2].data = days.map(d => d.pnl?.payroll_eur ?? 0);
+      pnlChart.update("none");
+    }
+
+    function renderHourHeat() {
+      const days = state.run?.days || [];
+      const last = days[days.length - 1];
+      const heat = last?.kpi?.hour_heat || {};
+      const max = Math.max(1, ...Object.values(heat));
+      const root = $("hour-heat");
+      root.innerHTML = "";
+      const lbl = document.createElement("div"); lbl.className = "lbl"; lbl.textContent = "today"; root.appendChild(lbl);
+      for (let h = 0; h < 24; h++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const v = heat[h] ?? heat[String(h)] ?? 0;
+        cell.dataset.v = String(v);
+        cell.style.setProperty("--alpha", String(v / max));
+        cell.title = `${h}:00 — ${v} arrivals`;
+        root.appendChild(cell);
+      }
+    }
+
+    function currentInventory() {
+      // Most-recent advance carries a fresh inventory snapshot. Fall back
+      // to init payload, then to status.inventory if a future contract adds it.
+      const days = state.run?.days || [];
+      for (let i = days.length - 1; i >= 0; i--) {
+        if (days[i]?.inventory) return days[i].inventory;
+      }
+      return state.run?.init?.inventory
+          || state.run?.status?.inventory
+          || null;
+    }
+
+    function renderInventory() {
+      const tbody = $("inv-table").querySelector("tbody");
+      tbody.innerHTML = "";
+      const inv = currentInventory();
+      if (!inv || !Object.keys(inv).length) {
+        tbody.innerHTML = '<tr><td colspan="2" style="color: var(--muted)">No inventory data yet.</td></tr>';
+        return;
+      }
+      const rows = Object.entries(inv).sort((a, b) => a[1] - b[1]).slice(0, 30);
+      for (const [k, v] of rows) {
+        const tr = document.createElement("tr");
+        if (v < 10) tr.className = "row-bad";
+        else if (v < 25) tr.className = "row-warn";
+        tr.innerHTML = `<td>${k}</td><td style="text-align:right">${v}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderPromos() {
+      const days = state.run?.days || [];
+      const last = days[days.length - 1];
+      const status = state.run?.status || last?.status || {};
+      const promos = status.active_promos || [];
+      const tbody = $("promo-table").querySelector("tbody");
+      tbody.innerHTML = "";
+      if (!promos.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="color: var(--muted)">none</td></tr>';
+        return;
+      }
+      for (const p of promos) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.category}</td><td>${(p.discount_pct * 100).toFixed(0)}%</td><td>${p.until}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderDecisions() {
+      const ul = $("decisions");
+      ul.innerHTML = "";
+      const days = state.run?.days || [];
+      const fromAdvance = days.flatMap(d => d.recent_decisions || []);
+      const fromPushed = (state.run?.decisions || []).map(x => ({
+        date: x.date, action: x.kind, detail: x.payload, day_index: x.day_index,
+      }));
+      const all = [...fromAdvance, ...fromPushed];
+      const seen = new Set();
+      const dedup = [];
+      for (const d of all) {
+        const k = JSON.stringify([d.date, d.action, d.detail]);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        dedup.push(d);
+      }
+      const recent = dedup.slice(-15).reverse();
+      if (!recent.length) {
+        ul.innerHTML = '<li style="color: var(--muted)">No decisions yet.</li>';
+        return;
+      }
+      for (const d of recent) {
+        const li = document.createElement("li");
+        li.innerHTML = `<span class="when">${d.date || "—"}</span>
+          <span class="kind">${d.action || "?"}</span>
+          <span class="detail">${escapeHtml(JSON.stringify(d.detail || {}))}</span>`;
+        ul.appendChild(li);
+      }
+    }
+
+    function renderAlerts() {
+      const days = state.run?.days || [];
+      const last = days[days.length - 1];
+      const status = state.run?.status || last?.status || {};
+      const ul = $("alerts");
+      ul.innerHTML = "";
+      const alerts = status.alerts || [];
+      if (!alerts.length) {
+        ul.innerHTML = '<li style="color: var(--muted); list-style: none; padding-left:0;">none</li>';
+        return;
+      }
+      for (const a of alerts) {
+        const li = document.createElement("li"); li.textContent = a; ul.appendChild(li);
+      }
+    }
+
+    function renderAscii() {
+      const days = state.run?.days || [];
+      const last = days[days.length - 1];
+      $("ascii-heat").textContent = last?.heatmap_ascii || "—";
+    }
+
+    function renderAll() {
+      renderHeader();
+      renderCharts();
+      renderHourHeat();
+      renderInventory();
+      renderPromos();
+      renderDecisions();
+      renderAlerts();
+      renderAscii();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    // --- Past runs ----------------------------------------------------------
+    async function refreshRunList() {
+      try {
+        const r = await fetch("/api/runs");
+        const rows = await r.json();
+        const sel = $("run-picker");
+        const current = sel.value;
+        sel.innerHTML = '<option value="">— Live —</option>';
+        for (const row of rows) {
+          const opt = document.createElement("option");
+          opt.value = row.name;
+          opt.textContent = row.name.replace(".json", "") + "  (" + Math.round(row.size_bytes / 1024) + " KB)";
+          sel.appendChild(opt);
+        }
+        sel.value = current || "";
+      } catch (e) { /* ignore */ }
+    }
+    $("run-picker").addEventListener("change", async (e) => {
+      const name = e.target.value;
+      if (!name) {
+        setMode("live");
+        if (es) { es.close(); }
+        connect();
+        return;
+      }
+      try {
+        const r = await fetch("/api/runs/" + encodeURIComponent(name));
+        const data = await r.json();
+        state.run = data;
+        state.replayName = name;
+        setMode("replay", "replay · " + name);
+        if (es) { es.close(); es = null; }
+        renderAll();
+        setConn(true, "replay");
+      } catch (err) {
+        setConn(false, "replay load failed");
+      }
+    });
+
+    // --- SSE ----------------------------------------------------------------
+    let es = null;
+    function connect() {
+      if (es) try { es.close(); } catch (_) {}
+      es = new EventSource("/api/events");
+      es.addEventListener("snapshot", (ev) => {
+        state.run = JSON.parse(ev.data);
+        renderAll();
+        setConn(true, "live");
+        refreshRunList();
+      });
+      es.addEventListener("init", (ev) => {
+        const payload = JSON.parse(ev.data);
+        state.run = { run_id: payload.run_id, init: payload.init, days: [], decisions: [], status: null };
+        renderAll();
+        refreshRunList();
+      });
+      es.addEventListener("advance", (ev) => {
+        const day = JSON.parse(ev.data);
+        if (!state.run) state.run = { days: [], decisions: [], init: null, status: null };
+        state.run.days.push(day);
+        if (day.status) state.run.status = day.status;
+        renderAll();
+      });
+      es.addEventListener("decision", (ev) => {
+        const dec = JSON.parse(ev.data);
+        if (!state.run) state.run = { days: [], decisions: [], init: null, status: null };
+        state.run.decisions.push(dec);
+        renderDecisions();
+      });
+      es.addEventListener("status", (ev) => {
+        const s = JSON.parse(ev.data);
+        if (!state.run) state.run = { days: [], decisions: [], init: null, status: null };
+        state.run.status = s;
+        renderHeader(); renderInventory(); renderPromos(); renderAlerts();
+      });
+      es.onopen = () => setConn(true, "live");
+      es.onerror = () => {
+        setConn(false, "reconnecting…");
+        // EventSource auto-reconnects; don't tear down.
+      };
+    }
+
+    // --- Tabs ---------------------------------------------------------------
+    document.querySelectorAll("nav.tabs button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("active", b === btn));
+        document.querySelectorAll(".tab-panel").forEach(p => {
+          p.classList.toggle("active", p.id === "tab-" + tab);
+        });
+        if (tab === "explore" && !explore.loaded) refreshExplore();
+      });
+    });
+
+    // --- Explore tab --------------------------------------------------------
+    const explore = {
+      data: null,
+      loaded: false,
+      sectionKey: null,         // string id of currently shown section
+      mode: "auto",             // "auto" (table when applicable) or "json"
+    };
+
+    // Definitions for the left-nav. Each section provides:
+    //   key, label, group, source: () => any (object/array to render),
+    //   table: (data) => {columns, rows} | null  (for the "auto" view)
+    function exploreSections() {
+      const data = explore.data || { sections: {}, state: {} };
+      const sec = data.sections || {};
+      const st = data.state || {};
+      const restaurant = sec.restaurant || {};
+      const restName = restaurant.name || "Restaurant";
+
+      function menuTable(items) {
+        if (!Array.isArray(items)) return null;
+        const overrides = st.price_overrides || {};
+        const inv = st.inventory || {};
+        const removed = new Set(st.menu_removed || []);
+        const added = (st.menu_added || []).map(a => ({...a, _added: true}));
+        const all = [...items, ...added];
+        return {
+          columns: ["id", "name", "category", "price_eur", "food_cost_eur", "popularity_weight", "stock", "status"],
+          rows: all.map(m => {
+            const id = m.id;
+            const price = overrides[id] != null ? Number(overrides[id]) : m.price_eur ?? m.price;
+            const cost = m.food_cost_eur ?? m.cost;
+            const stock = inv[id] ?? "—";
+            const status = removed.has(id) ? "removed"
+                          : m._added ? "added"
+                          : overrides[id] != null ? "repriced"
+                          : "ok";
+            return [id, m.name, m.category, price, cost, m.popularity_weight ?? "—", stock, status];
+          }),
+        };
+      }
+
+      function staffTable(staff) {
+        if (!Array.isArray(staff)) return null;
+        return {
+          columns: Object.keys(staff[0] || {}),
+          rows: staff.map(s => Object.keys(staff[0]).map(k => formatCell(s[k]))),
+        };
+      }
+
+      function tablesTable(tables) {
+        if (!Array.isArray(tables)) return null;
+        const layout = st.table_layout || {};
+        return {
+          columns: ["id", "default_seats", "current_seats", "x", "y"],
+          rows: tables.map(t => {
+            const id = t.id;
+            const cur = layout[id] != null ? layout[id] : t.seats;
+            return [id, t.seats, cur, t.x ?? "—", t.y ?? "—"];
+          }),
+        };
+      }
+
+      function inventoryTable(inv) {
+        const rows = Object.entries(inv || {}).sort((a, b) => a[1] - b[1]);
+        return {
+          columns: ["item_id", "qty"],
+          rows: rows.map(([k, v]) => [k, v]),
+        };
+      }
+
+      function promosTable(promos) {
+        if (!promos || !promos.length) return { columns: ["category","discount_pct","until"], rows: [] };
+        return {
+          columns: ["category", "discount_pct", "until"],
+          rows: promos.map(p => [p.category, p.discount_pct, p.until]),
+        };
+      }
+
+      function staffOverrideTable(ovr) {
+        const rows = [];
+        for (const [date, byrole] of Object.entries(ovr || {})) {
+          for (const [role, count] of Object.entries(byrole)) {
+            rows.push([date, role, count]);
+          }
+        }
+        return { columns: ["date", "role", "count"], rows };
+      }
+
+      function reservationCapsTable(caps) {
+        return { columns: ["date", "cap"], rows: Object.entries(caps || {}) };
+      }
+
+      function marketingTable(map) {
+        return { columns: ["date", "amount_eur"], rows: Object.entries(map || {}) };
+      }
+
+      function weatherTable(map) {
+        return {
+          columns: ["date", "condition", "demand_mult"],
+          rows: Object.entries(map || {}).map(([d, v]) => [d, v.condition, v.mult]),
+        };
+      }
+
+      function incidentsTable(rows) {
+        if (!rows || !rows.length) return { columns: [], rows: [] };
+        const cols = Object.keys(rows[0]);
+        return { columns: cols, rows: rows.map(r => cols.map(c => formatCell(r[c]))) };
+      }
+
+      const out = [
+        { group: "PLACE",
+          key: "restaurant", label: restName + " (info)",
+          source: () => restaurant, table: () => null },
+        { group: "PLACE",
+          key: "tables", label: "Tables / floor plan",
+          source: () => sec.tables,
+          table: () => tablesTable(sec.tables),
+          count: Array.isArray(sec.tables) ? sec.tables.length : null },
+        { group: "PEOPLE",
+          key: "staff", label: "Staff roster",
+          source: () => sec.staff,
+          table: () => staffTable(sec.staff),
+          count: Array.isArray(sec.staff) ? sec.staff.length : null },
+        { group: "PEOPLE",
+          key: "staffing_override", label: "Staffing overrides",
+          source: () => st.staffing_override || {},
+          table: () => staffOverrideTable(st.staffing_override) },
+        { group: "MENU & ITEMS",
+          key: "menu", label: "Menu",
+          source: () => sec.menu,
+          table: () => menuTable(sec.menu),
+          count: Array.isArray(sec.menu) ? sec.menu.length + (st.menu_added?.length || 0) : null },
+        { group: "MENU & ITEMS",
+          key: "inventory", label: "Inventory",
+          source: () => st.inventory || {},
+          table: () => inventoryTable(st.inventory),
+          count: Object.keys(st.inventory || {}).length || null },
+        { group: "MENU & ITEMS",
+          key: "promos", label: "Active promos",
+          source: () => st.active_promos || [],
+          table: () => promosTable(st.active_promos),
+          count: (st.active_promos || []).length || null },
+        { group: "MENU & ITEMS",
+          key: "price_overrides", label: "Price overrides",
+          source: () => st.price_overrides || {},
+          table: () => ({ columns: ["item_id", "price_eur"], rows: Object.entries(st.price_overrides || {}) }),
+          count: Object.keys(st.price_overrides || {}).length || null },
+        { group: "OPERATIONS",
+          key: "reservation_caps", label: "Reservation caps",
+          source: () => st.reservation_caps || {},
+          table: () => reservationCapsTable(st.reservation_caps) },
+        { group: "OPERATIONS",
+          key: "marketing", label: "Marketing spend",
+          source: () => st.marketing_spend_by_day || {},
+          table: () => marketingTable(st.marketing_spend_by_day) },
+        { group: "ENVIRONMENT",
+          key: "weather", label: "Weather log",
+          source: () => st.weather_log || {},
+          table: () => weatherTable(st.weather_log) },
+        { group: "ENVIRONMENT",
+          key: "incidents", label: "Incidents",
+          source: () => st.incidents_log || [],
+          table: () => incidentsTable(st.incidents_log),
+          count: (st.incidents_log || []).length || null },
+        { group: "STATE",
+          key: "state_summary", label: "State summary",
+          source: () => ({
+              day_index: st.day_index, total_days: st.total_days,
+              start_date: st.start_date, seed: st.seed,
+              cash_eur: st.cash_eur, starting_cash_eur: st.starting_cash_eur,
+              reputation: st.reputation, satisfaction_ewma: st.satisfaction_ewma,
+              ingredient_price_multiplier: st.ingredient_price_multiplier,
+              loyalty_enabled: st.loyalty_enabled,
+              competitor_active: st.competitor_active,
+            }),
+          table: () => null },
+      ];
+      return out;
+    }
+
+    function formatCell(v) {
+      if (v == null) return "—";
+      if (typeof v === "object") return JSON.stringify(v);
+      return v;
+    }
+
+    function jsonHtml(value) {
+      const s = JSON.stringify(value, null, 2);
+      // Highlight keys, strings, numbers, booleans/null. Done with regex on the
+      // escaped string to keep the renderer dependency-free.
+      const esc = s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+      const out = esc
+        .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span class="k">$1</span>$2')
+        .replace(/: ("(?:\\.|[^"\\])*")/g, ': <span class="s">$1</span>')
+        .replace(/(?<=[:\s,\[])(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)/gi, '<span class="n">$1</span>')
+        .replace(/\b(true|false|null)\b/g, '<span class="b">$1</span>');
+      return out;
+    }
+
+    function renderExploreNav() {
+      const sections = exploreSections();
+      const nav = $("explore-nav");
+      nav.innerHTML = "";
+      const groups = {};
+      for (const s of sections) (groups[s.group] ||= []).push(s);
+      for (const [grp, items] of Object.entries(groups)) {
+        const h = document.createElement("div"); h.className = "group"; h.textContent = grp;
+        nav.appendChild(h);
+        for (const s of items) {
+          const b = document.createElement("button");
+          b.dataset.key = s.key;
+          if (s.key === explore.sectionKey) b.classList.add("active");
+          const lbl = document.createElement("span"); lbl.textContent = s.label;
+          const cnt = document.createElement("span"); cnt.className = "count";
+          if (s.count != null) cnt.textContent = s.count;
+          b.appendChild(lbl); b.appendChild(cnt);
+          b.addEventListener("click", () => {
+            explore.sectionKey = s.key;
+            renderExploreNav();
+            renderExploreViewer();
+          });
+          nav.appendChild(b);
+        }
+      }
+    }
+
+    function renderExploreViewer() {
+      const sections = exploreSections();
+      const sec = sections.find(x => x.key === explore.sectionKey);
+      const title = $("viewer-title");
+      const meta = $("viewer-meta");
+      const body = $("viewer-body");
+      if (!sec) {
+        title.textContent = "Select a section";
+        meta.textContent = "";
+        body.innerHTML = '<div style="color: var(--muted)">Pick a section on the left.</div>';
+        return;
+      }
+      const data = sec.source();
+      title.textContent = sec.label;
+      const size = Array.isArray(data) ? data.length + " items"
+                  : (data && typeof data === "object") ? Object.keys(data).length + " keys"
+                  : "";
+      meta.textContent = size;
+
+      let mode = explore.mode;
+      const tableShape = sec.table ? sec.table(data) : null;
+      if (mode === "auto" && (!tableShape || !tableShape.columns?.length)) {
+        // No useful table — fall through to JSON.
+        mode = "json";
+      }
+      if (mode === "json") {
+        body.innerHTML = `<div class="json-view">${jsonHtml(data)}</div>`;
+      } else {
+        body.innerHTML = renderTable(tableShape);
+      }
+      // Sync toggle visual state.
+      document.querySelectorAll("#viewer-toggle button").forEach(b => {
+        b.classList.toggle("active", b.dataset.mode === explore.mode);
+      });
+    }
+
+    function renderTable(shape) {
+      if (!shape || !shape.columns?.length) {
+        return '<div style="color: var(--muted)">No tabular view for this section — switch to JSON.</div>';
+      }
+      const head = shape.columns.map(c => `<th>${escapeHtml(c)}</th>`).join("");
+      if (!shape.rows.length) {
+        return `<div class="table-wrap"><table class="table-view"><thead><tr>${head}</tr></thead><tbody><tr><td colspan="${shape.columns.length}" style="color: var(--muted)">empty</td></tr></tbody></table></div>`;
+      }
+      const body = shape.rows.map(r => {
+        return "<tr>" + r.map(c => `<td>${escapeHtml(formatCell(c))}</td>`).join("") + "</tr>";
+      }).join("");
+      return `<div class="table-wrap"><table class="table-view"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+    }
+
+    document.querySelectorAll("#viewer-toggle button").forEach(b => {
+      b.addEventListener("click", () => {
+        explore.mode = b.dataset.mode;
+        renderExploreViewer();
+      });
+    });
+
+    async function refreshExplore() {
+      try {
+        const r = await fetch("/api/restaurant");
+        explore.data = await r.json();
+        explore.loaded = true;
+        if (!explore.sectionKey) {
+          explore.sectionKey = "restaurant";
+        }
+        renderExploreNav();
+        renderExploreViewer();
+      } catch (e) {
+        $("explore-nav").innerHTML = '<div class="group" style="color: var(--bad)">Load failed</div>';
+      }
+    }
+
+    setMode("live");
+    connect();
+    refreshRunList();
+    setInterval(refreshRunList, 15000);
+    // Refresh Explore data when a new advance lands so live state slices update.
+    setInterval(() => { if (explore.loaded) refreshExplore(); }, 5000);
+  })();
+  </script>
+</body>
+</html>
