@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "message": "Game initialized.",
+  "start_date": "2026-04-20",
+  "total_days": 30,
+  "starting_cash_eur": 20000.0,
+  "reservations_pregenerated": 2556
+}

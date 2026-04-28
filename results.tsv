@@ -1,0 +1,12 @@
+iter	commit	score_A	score_B	profit_A	profit_B	sat_A	sat_B	rep_A	rep_B	walk_A	walk_B	status	description
+1	13ac17b	31079.84	-13834.56	61116.72	21556.37	0.761	0.751	3.843	3.761	3085	3254	baseline	unmodified agent baseline
+2	6723474	-18694.26	63259.65	22147.74	83399.57	0.744	0.731	3.675	4.026	3263	2402	reject	exp-2 inventory floors+no early promos+staffing defaults (regressed on A)
+3	b37e26c	63292.89	7288.26	79987.64	41176.90	0.704	0.753	3.963	3.765	1757	3096	kept	exp-3 weekend over-staffing (servers 8 cooks 3)
+4	29927df	56234.35	25209.20	80425.55	53079.42	0.759	0.750	3.948	3.849	2781	2832	reject	exp-4 forbid promos unless rep>=4.20 (regressed on A)
+5	75a59fa	-33929.67	49925.82	12633.24	73218.29	0.756	0.748	3.618	3.943	3482	2639	reject	exp-5 inventory floor (regressed on A)
+6	1235a13	-34889.38	88853.88	9629.96	103759.28	0.751	0.688	3.639	4.030	3418	1604	reject	exp-6 forbid promos in first 7 days (regressed on A)
+7	2d0156b	70764.16	15521.71	92804.01	45785.63	0.716	0.755	3.927	3.821	2354	2991	kept	exp-7 hard rule never discount mains
+8	388d4dd	9922.14	37902.36	45210.74	63135.84	0.751	0.765	3.749	3.900	3160	2749	reject	exp-8 day-1 setup checklist (regressed on A)
+9	70fb212	-21950.46	63117.80	22226.89	82412.87	0.746	0.754	3.636	4.070	3340	2386	reject	exp-9 marketing cap (regressed on A)
+10	ec988f0	17503.62	-253.46	51448.98	29950.27	0.748	0.753	3.768	3.775	3113	2703	reject	exp-10 hoist hard rules to top (regressed on A and B)
+11	6d1ff56	83313.04	-16088.63	103170.86	18339.19	0.725	0.732	3.965	3.772	2223	3173	regress_B	exp-11 default to inaction (won A 83k but B -16k)

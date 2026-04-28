@@ -1,0 +1,21 @@
+{
+  "days_simulated": 30,
+  "starting_cash_eur": 20000.0,
+  "ending_cash_eur": 22669.69,
+  "cash_delta_eur": 2669.69,
+  "total_revenue_eur": 139525.4,
+  "total_cogs_eur": 41972.46,
+  "total_net_profit_eur": 18339.19,
+  "gross_margin_pct": 0.699,
+  "mean_satisfaction": 0.732,
+  "mean_reputation": 3.772,
+  "total_walkouts": 3173,
+  "incidents": 1,
+  "decisions": 53,
+  "bankrupt": false,
+  "score_eur": -16088.63,
+  "profit_term_eur": 18339.19,
+  "satisfaction_penalty_eur": 456.33,
+  "reputation_penalty_eur": 8587.49,
+  "walkout_penalty_eur": 25384.0
+}

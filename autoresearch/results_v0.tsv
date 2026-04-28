@@ -1,0 +1,8 @@
+iter	commit	net_profit_eur	mean_satisfaction	mean_reputation	score	status	kept	description
+1	c2b0dcc	99661.24	0.723	4.175	96961.24	constraint_breach	yes	add concrete playbook w day-of-week staffing
+2	2d98ffb	195294.63	0.755	4.236	195294.63	ok	yes	aggressive peak staffing and caps
+3	d18a175	23491.74	0.750	4.202	23491.74	ok	no	tighter caps + mon/tue promos
+4	5f014bc	105477.50	0.736	4.173	104077.50	reject	no	5% price raise mains+drinks day 2
+5	c5b46eb	184138.99	0.748	4.229	183938.99	reject	no	drink inventory buffer 6-day cover
+6	f713bb7	214524.22	0.769	4.256	214524.22	ok	yes	stronger Wed/Thu/Sun staffing
+7	6ca798a	83297.57	0.737	4.180	81997.57	reject	no	day-5 conditional 5% price hike
