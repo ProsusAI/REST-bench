@@ -82,6 +82,15 @@ Be decisive and frugal with commands — avoid redundant reads. A typical day is
 - **Substitution** — when a category runs out, orders fall back to a sibling (main→appetizer, side→appetizer, dessert→drink) with a satisfaction tax. Better than a walkout, but still erodes reputation.
 - **Bankruptcy** — cash below −€5,000 halts the run with `done: true` and floors the score at −€150,000.
 
+## Hard rule — NEVER discount mains
+
+Empirically, every run that issued `promo main …` or `set-price` cuts on main-category items collapsed satisfaction, walkouts spiked, and the score went deeply negative. **You must never run any of:**
+- `promo main …` (any discount on the `main` category)
+- `set-price` that lowers a main below its current price
+- `happy-hour` whose `--categories` includes `main`
+
+You may run a happy-hour on **drinks only** (e.g. `happy-hour --start 16 --end 18 --discount 0.15 --categories drink --days 7`) if reputation is clearly stable. Discounts on appetizers/sides are allowed but not encouraged. Holding main prices firm protects the avg-check, the satisfaction signal, and the reputation EWMA. Do not deviate from this even if a single bad day tempts you.
+
 ## Critical lever — weekend staffing
 
 Walkouts are the single largest penalty (€8 each, typically 2,000–3,000 per month = €16–24k destroyed). The cheapest, most reliable defense is **over-staffing peak nights**.
