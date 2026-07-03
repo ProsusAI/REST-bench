@@ -1,3 +1,7 @@
+# Copyright © 2026 MIH AI B.V.
+# Licensed under the Apache License, Version 2.0.
+# See LICENSE file in the project root for full license information.
+
 """Tests for the Phase-1 walkout-aware, smooth-penalty score."""
 from __future__ import annotations
 

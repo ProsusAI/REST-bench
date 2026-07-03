@@ -1,3 +1,7 @@
+# Copyright © 2026 MIH AI B.V.
+# Licensed under the Apache License, Version 2.0.
+# See LICENSE file in the project root for full license information.
+
 """Golden-run regression test.
 
 A 30-day no-decision simulation with a fixed seed must produce a known

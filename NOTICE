@@ -1,0 +1,18 @@
+Restaurant Sim (REST-bench) — The Rotterdam Table
+Copyright © 2026 MIH AI B.V.
+
+This product is licensed under the Apache License, Version 2.0.
+
+This software includes third-party open source software components.
+The following is a list of these components with their respective licenses:
+
+================================================================================
+THIRD-PARTY DEPENDENCIES
+================================================================================
+
+Runtime dependencies:
+--------------------------------------------------------------------------------
+Component: NumPy            License: BSD-3-Clause     Source: https://github.com/numpy/numpy
+
+For complete license texts, see the LICENSE files in the respective dependencies
+or visit the source repositories.
