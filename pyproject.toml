@@ -7,6 +7,12 @@ name = "rest_sim"
 version = "0.2.0"
 description = "Restaurant management simulation — The Rotterdam Table"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "MIH AI B.V." }]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+]
 dependencies = ["numpy>=1.24"]
 
 [tool.pytest.ini_options]
