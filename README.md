@@ -1,5 +1,7 @@
 # Restaurant Sim — The Rotterdam Table
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 A 30-day restaurant management simulation for **The Rotterdam Table**, a
 22-table, 78-seat casual full-service bistro on Witte de Withstraat,
 Rotterdam. Designed as a benchmark for LLM management agents: the agent
@@ -169,3 +171,8 @@ pytest -q
 - `test_score.py` — profit-only score + bankruptcy
 - `test_phase2.py` — cohorts + reviews + supplier news
 - `test_phase4.py` — manager view masking
+
+## License
+
+REST-bench is licensed under the [Apache License 2.0](LICENSE). Copyright © 2026 MIH AI B.V.
+See [NOTICE](NOTICE) for third-party attributions.

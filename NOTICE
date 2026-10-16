@@ -1,0 +1,29 @@
+REST-bench (Restaurant Sim — The Rotterdam Table)
+Copyright 2026 MIH AI B.V.
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+------------------------------------------------------------------------
+Third-party components
+------------------------------------------------------------------------
+
+The simulation has one third-party runtime dependency, which is installed
+from PyPI and NOT bundled or redistributed by this project:
+
+  - numpy .................. BSD-3-Clause ........ https://github.com/numpy/numpy
+
+The optional dashboard (rest_sim/dashboard_index.html) loads the following
+library from a public CDN at view time. It is NOT bundled or redistributed
+by this project:
+
+  - Chart.js 4.4.1 ......... MIT License ......... https://github.com/chartjs/Chart.js
+
+The restaurant, menu, staff and table data in data/ are fictional and
+were created for this benchmark.
+
+------------------------------------------------------------------------
+Authorship
+------------------------------------------------------------------------
+
+Portions of this project were co-authored by Claude Code under human
+direction and review.
